@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+node_modules
+cookies.json
 
 # C extensions
 *.so
@@ -69,10 +71,15 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+node_modules
+build
+npm-debug.log
+.env
+.DS_Store
 
 # PyBuilder
 target/
-
+class-data-*
 # Jupyter Notebook
 .ipynb_checkpoints
 
