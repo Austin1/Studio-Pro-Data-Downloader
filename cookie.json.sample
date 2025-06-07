@@ -1,0 +1,10 @@
+[
+  {
+    "name": "PHPSESSID",
+    "value": "",
+    "domain": "app.gostudiopro.com",
+    "path": "/",
+    "httpOnly": true,
+    "secure": true
+  }
+]
