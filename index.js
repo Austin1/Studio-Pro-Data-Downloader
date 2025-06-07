@@ -30,17 +30,163 @@ const fs = require('fs');
         waitUntil: 'networkidle2',
       });
       
-      // Wait for user to manually login (since we don't have credentials)
-      console.log('⚠️ Please log in manually in the browser window...');
-      console.log('💡 After logging in, the script will automatically continue');
+      // Handle UserCentrics modal on login page
+      try {
+        await page.waitForSelector('#usercentrics-root', { timeout: 10000 });
+        
+        const acceptClicked = await page.evaluate(() => {
+          return new Promise((resolve) => {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
+            const checkForButton = () => {
+              attempts++;
+              const shadowHost = document.querySelector('#usercentrics-root');
+              
+              if (shadowHost && shadowHost.shadowRoot) {
+                const acceptButton = shadowHost.shadowRoot.querySelector('[data-testid="uc-accept-all-button"]');
+                if (acceptButton) {
+                  acceptButton.click();
+                  resolve(true);
+                  return;
+                }
+              }
+              
+              if (attempts < maxAttempts) {
+                setTimeout(checkForButton, 100);
+              } else {
+                resolve(false);
+              }
+            };
+            
+            checkForButton();
+          });
+        });
+        
+        if (acceptClicked) {
+          console.log('✅ Accepted UserCentrics privacy modal on login page');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      } catch (err) {
+        console.log('⚠️ UserCentrics modal not found on login page');
+      }
       
-      // Wait until we're redirected away from login page
-      await page.waitForFunction(() => {
-        return !window.location.href.includes('index.php') && 
-               (window.location.href.includes('classes.php') || 
-                window.location.href.includes('dashboard') ||
-                document.querySelector('#season_tabs'));
-      }, { timeout: 300000 }); // 5 minute timeout for manual login
+      // Attempt automatic login if credentials are available
+      if (process.env.GSP_USERNAME && process.env.GSP_PASSWORD) {
+        console.log('🔐 Attempting automatic login with stored credentials...');
+        
+        try {
+          // Wait for login form elements
+          await page.waitForSelector('input[name="username"], input[name="email"], #username', { timeout: 5000 });
+          await page.waitForSelector('input[name="password"], #password', { timeout: 5000 });
+          
+          // Fill in credentials
+          const usernameSelector = await page.$('input[name="username"]') ? 'input[name="username"]' : 
+                                  await page.$('input[name="email"]') ? 'input[name="email"]' : '#username';
+          const passwordSelector = await page.$('input[name="password"]') ? 'input[name="password"]' : '#password';
+          
+          await page.type(usernameSelector, process.env.GSP_USERNAME);
+          await page.type(passwordSelector, process.env.GSP_PASSWORD);
+          
+          // Submit the form - try multiple selectors
+          console.log('🔍 Looking for submit button...');
+          
+          let submitButton = null;
+          const submitSelectors = [
+            'input[type="submit"]',
+            'button[type="submit"]', 
+            'button[class*="btn"]',
+            '.btn-primary',
+            '#login-button',
+            'button:contains("Sign In")',
+            'button:contains("Login")',
+            'input[value*="Sign"]',
+            'input[value*="Login"]'
+          ];
+          
+          for (const selector of submitSelectors) {
+            try {
+              submitButton = await page.$(selector);
+              if (submitButton) {
+                console.log(`✅ Found submit button with selector: ${selector}`);
+                break;
+              }
+            } catch (err) {
+              // Continue to next selector
+            }
+          }
+          
+          if (submitButton) {
+            await submitButton.click();
+            console.log('✅ Login form submitted via button click');
+          } else {
+            // Debug: Log available form elements
+            console.log('🔍 Debugging available form elements...');
+            const formElements = await page.evaluate(() => {
+              const forms = document.querySelectorAll('form');
+              const buttons = document.querySelectorAll('button, input[type="submit"], input[type="button"]');
+              
+              return {
+                forms: Array.from(forms).map(form => ({
+                  action: form.action,
+                  method: form.method,
+                  innerHTML: form.innerHTML.substring(0, 200)
+                })),
+                buttons: Array.from(buttons).map(btn => ({
+                  type: btn.type,
+                  value: btn.value,
+                  textContent: btn.textContent?.trim(),
+                  className: btn.className,
+                  id: btn.id
+                }))
+              };
+            });
+            
+            console.log('📝 Available forms:', JSON.stringify(formElements.forms, null, 2));
+            console.log('📝 Available buttons:', JSON.stringify(formElements.buttons, null, 2));
+            
+            console.log('⚠️ No submit button found, trying Enter key...');
+            await page.focus(passwordSelector);
+            await page.keyboard.press('Enter');
+            console.log('✅ Login form submitted via Enter key');
+          }
+          
+          // Wait for redirect after login
+          await page.waitForFunction(() => {
+            return !window.location.href.includes('index.php') && 
+                   (window.location.href.includes('classes.php') || 
+                    window.location.href.includes('dashboard') ||
+                    document.querySelector('#season_tabs'));
+          }, { timeout: 30000 });
+          
+          console.log('✅ Automatic login successful');
+          
+        } catch (err) {
+          console.log('❌ Automatic login failed, falling back to manual login');
+          console.log('⚠️ Please log in manually in the browser window...');
+          console.log('💡 After logging in, the script will automatically continue');
+          
+          // Wait for manual login
+          await page.waitForFunction(() => {
+            return !window.location.href.includes('index.php') && 
+                   (window.location.href.includes('classes.php') || 
+                    window.location.href.includes('dashboard') ||
+                    document.querySelector('#season_tabs'));
+          }, { timeout: 300000 }); // 5 minute timeout for manual login
+        }
+      } else {
+        console.log('⚠️ No credentials found in environment variables (GSP_USERNAME, GSP_PASSWORD)');
+        console.log('⚠️ Please log in manually in the browser window...');
+        console.log('💡 After logging in, the script will automatically continue');
+        
+        // Wait for manual login
+        await page.waitForFunction(() => {
+          return !window.location.href.includes('index.php') && 
+                 (window.location.href.includes('classes.php') || 
+                  window.location.href.includes('dashboard') ||
+                  document.querySelector('#season_tabs'));
+        }, { timeout: 300000 }); // 5 minute timeout for manual login
+      }
       
       // Extract and save new cookies
       const newCookies = await page.cookies();

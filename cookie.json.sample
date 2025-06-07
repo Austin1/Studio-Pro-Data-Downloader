@@ -1,10 +1,30 @@
 [
   {
-    "name": "PHPSESSID",
-    "value": "",
+    "name": "auth_token",
+    "value": "{enter your auth token here}",
     "domain": "app.gostudiopro.com",
     "path": "/",
+    "expires": -1,
+    "size": 106,
+    "httpOnly": false,
+    "secure": false,
+    "session": true,
+    "priority": "Medium",
+    "sameParty": false,
+    "sourceScheme": "Secure"
+  },
+  {
+    "name": "PHPSESSID",
+    "value": "{enter your session id here}",
+    "domain": "app.gostudiopro.com",
+    "path": "/",
+    "expires": -1,
+    "size": 39,
     "httpOnly": true,
-    "secure": true
+    "secure": true,
+    "session": true,
+    "priority": "Medium",
+    "sameParty": false,
+    "sourceScheme": "Secure"
   }
 ]
