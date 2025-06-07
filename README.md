@@ -78,7 +78,43 @@ PASSWORD=yourpassword
 
 Replace with your actual Studio Pro login credentials.
 
-### 5. Run the Script
+### 5. Obtain a Cookie for automation
+1. I'd like to replace this and automate it, but I haven't found a good way to do this yet. So for now, you have to manually obtain a cookie to login. Otherwise you have to login via the chrome test env that popsup when the script run. Eventually I want this to run headless and handle cookie and login, but requires bypassing 2FA and RECAPTCHA which is a bit complicated.
+2. 🔐 How to Get Your PHPSESSID from Chrome
+
+If you want to bypass login and 2FA in the script, you can extract your session cookie (PHPSESSID) from Chrome.
+
+Steps:
+	1.	Open https://app.gostudiopro.com and log in as normal.
+	2.	Press F12 or Ctrl+Shift+I (Windows) / Cmd+Option+I (Mac) to open DevTools.
+	3.	Go to the Application tab.
+	4.	In the left sidebar, expand Cookies and click on https://app.gostudiopro.com.
+	5.	Look for a cookie named PHPSESSID.
+	6.	Copy the Value — it looks like:
+
+cc9ae5f947e36ecb2cdeff3a3c7058c2
+
+
+
+Save it for the Script
+
+Create a file named cookies.json in your project folder (see cookies.json.sample; which can be renamed to remove .sample):
+
+[
+  {
+    "name": "PHPSESSID",
+    "value": "your-session-id-goes-here",
+    "domain": "app.gostudiopro.com",
+    "path": "/",
+    "httpOnly": true,
+    "secure": true
+  }
+]
+
+This lets Puppeteer authenticate using your existing browser session — no login or 2FA needed.
+
+
+### 6. Run the Script
 
 ```bash
 node index.js

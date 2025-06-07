@@ -79,7 +79,7 @@ npm-debug.log
 
 # PyBuilder
 target/
-class-data-*
+class-data*
 # Jupyter Notebook
 .ipynb_checkpoints
 
