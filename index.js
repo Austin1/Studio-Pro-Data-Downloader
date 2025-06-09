@@ -389,6 +389,18 @@ const fs = require('fs');
           return hours && mins && ampm ? `${hours}:${mins} ${ampm}` : '';
         };
         
+        const extractGrades = (description) => {
+          if (!description) return [];
+          
+          const gradesMatch = description.match(/\|\|Grades:([^|]*)/);
+          if (gradesMatch && gradesMatch[1]) {
+            return gradesMatch[1].split(',').map(grade => grade.trim()).filter(grade => grade);
+          }
+          return [];
+        };
+        
+        const description = getValue('textarea[name="description"]');
+        
         return {
           className: getValue('input[name="class_name"]'),
           location: getSelectedOption('select[name="location"]'),
@@ -401,7 +413,8 @@ const fs = require('fs');
           billSeparately: isChecked('input[name="bill"]'),
           allowRegistrationOnline: isChecked('input[name="online"]'),
           classRegistrationFee: getValue('input[name="registration_fee"]'),
-          onlineClassDescription: getValue('textarea[name="description"]'),
+          onlineClassDescription: description,
+          grades: extractGrades(description),
           ignoreRegistrationFee: isChecked('input[name="ignore_reg_fee"]'),
           startDate: getStartDate(),
           endDate: getEndDate(),
